@@ -17,8 +17,8 @@ jobs:
         run: echo "::debug::Ref = ${{github.ref}}"
       - uses: actions/checkout@v3      
         with:
-         persist-credentials: false
-         fetch-depth: 0
+          persist-credentials: true
+          fetch-depth: 0
 
       - name: Modify last update
         run: |
@@ -34,8 +34,8 @@ jobs:
           
           arr[0]="Update.."
           arr[1]="Update LAST_UPDATED file"
-          arr[2]="Update LAST_UPDATED .."
-          arr[3]="Update LAST_UPDATED file .."
+          arr[2]="Update LAST_UPDATED.."
+          arr[3]="Update LAST_UPDATED file.."
           arr[4]="LAST_UPDATED file.."
           arr[5]="Update LAST_UPDATED"
           arr[6]="LAST_UPDATED file"

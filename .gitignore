@@ -1,0 +1,5 @@
+# This is a Git ignore file
+
+# Ignore the model and Dataset folders
+model/
+Dataset/

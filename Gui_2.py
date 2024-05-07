@@ -92,7 +92,7 @@ def from_file():
 def text_to_sound(link):
     global arabic_text
     arabic_text = pred_one_img(model,link)  # Convert Image To Text
-    with open('output.txt', 'w', encoding='utf-8') as file:
+    with open('output2.txt', 'w', encoding='utf-8') as file:
         file.write(arabic_text)
     text_to_speech(arabic_text)  # Convert Text To Speech
 

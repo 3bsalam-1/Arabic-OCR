@@ -127,4 +127,3 @@ theme.grid(row=4 ,column=1 ,sticky='se',padx=10,pady=10)
 # Gui Main Function Call
 root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()
-

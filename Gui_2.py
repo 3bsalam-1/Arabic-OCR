@@ -5,12 +5,10 @@ import os
 from tkinter import *
 from tkinter.filedialog import askopenfilename
 import customtkinter
-import cv2
 from PIL import Image, ImageTk
-from ocr_model import *
+from char import *
 from pygame import mixer
 from tensorflow import keras
-import tensorflow as tf
 # Initialize Gui Window
 root = customtkinter.CTk()
 root.geometry("820x370")

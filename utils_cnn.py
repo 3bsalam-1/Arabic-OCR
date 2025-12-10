@@ -1,5 +1,8 @@
 import cv2
-from keras.models import load_model
+try:
+    from keras.models import load_model
+except ImportError:
+    load_model = None
 import numpy as np
 from gtts import gTTS
 
@@ -13,6 +16,8 @@ def getname(n):
         
 
 def pred_one_img(model_n,path):
+    if model_n is None:
+        return "Error: Model not loaded or Tensorflow missing."
     img_1=cv2.imread(path,0)
     img_1=cv2.resize(img_1,(32,32))
     img_1=np.array(img_1)

@@ -7,8 +7,15 @@ from tkinter.filedialog import askopenfilename
 import customtkinter
 import cv2
 from PIL import Image, ImageTk
-from ocr_model import *
+from utils_tesseract import *
+from utils_cnn import *
 from pygame import mixer
+try:
+    from tensorflow import keras
+    cnn_model = keras.models.load_model(os.path.join("model", "arabic-OCR.h5"))
+except (ImportError, OSError):
+    print("[INFO] Tensorflow/CNN mode disabled (dependency missing). App will default to Tesseract mode.")
+    cnn_model = None
 
 # Initialize Gui Window
 root = customtkinter.CTk()
@@ -26,12 +33,9 @@ arabic_text=" "
 opencv_image = None
 captured_image = None
 # Define a video capture object
-vid = cv2.VideoCapture(0)
-# Declare the width and height in variables
-width, height = 200, 200
-# Set the width and height
-vid.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-vid.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+# Global variable for video capture
+vid = None
+
 # Theme Switcher Button Icons Initialization
 img_light = PhotoImage(file=os.path.join('assets', 'light.png'))
 img_dark = PhotoImage(file=os.path.join('assets', "dark.png"))
@@ -85,16 +89,27 @@ def play_audio():
     else:
         mixer.music.stop()
         sound = True
-# Open Camera Session Function
+
 def open_camera():
     global opencv_image
     global captured_image
+    global vid
+
+    if vid is None or not vid.isOpened():
+        print("Camera not accessible")
+        return
 
     # Capture the video frame by frame
-    _, frame = vid.read()
+    ret, frame = vid.read()
+    if not ret or frame is None:
+        print("Failed to grab frame (stopping retry)")
+        # Stop retrying to avoid spam
+        # select_label.after(100, open_camera) 
+        return
+
     # Convert image from one color space to other
     opencv_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
+    
     # Capture the latest frame and transform to image
     captured_image = Image.fromarray(opencv_image)
     # Resize the captured image
@@ -109,31 +124,45 @@ def open_camera():
     select_label.configure(image=photo_image)
 
     # Repeat the same process after every 1 seconds
-    select_label.after(1, open_camera)
+    select_label.after(10, open_camera)
 
 
 # Close Camera Session Function
 def close_camera():
+    global vid
     select_label.configure(text="\n\n\n\n\nSelect Input Way ", image="")
-    vid.release()
+    if vid and vid.isOpened():
+        vid.release()
     cv2.destroyAllWindows()
 
 
 # Camera Switcher Function
 def switch_camera():
     global cam
+    global vid
 
-    if cam:
-
+    if cam: # Button to open camera
+        vid = cv2.VideoCapture(0)
+        vid.set(cv2.CAP_PROP_FRAME_WIDTH, 200)
+        vid.set(cv2.CAP_PROP_FRAME_HEIGHT, 200)
+        if not vid.isOpened():
+            print("Could not open camera")
+            return
         open_camera()
         cam = False
-    else:
+    else: # Button to close camera
         close_camera()
         cam = True
 
 
 # Capture Frame From Camera And Pass It In Models To Make A Prediction
 def capture():
+    if captured_image is None:
+        print("No image captured yet.")
+        from tkinter import messagebox
+        messagebox.showwarning("Warning", "Please enable the camera and ensure it's working first.")
+        return
+        
     image = captured_image.copy()
     image.save("image.png")
     text_to_sound("image.png")
@@ -153,14 +182,34 @@ def from_file():
 
 def text_to_sound(link):
     global arabic_text
+    
+    if link is None or not link.strip():
+        return
+
+    mode = mode_switch.get() # Get current mode
+    
     if os.path.exists(link):
         try:
-            arabic_text = image_to_text(link)  # Convert Image To Text
+            if mode == "Full Text (Tesseract)":
+                arabic_text = image_to_text(link)
+            elif mode == "Character (CNN)": # Character Mode
+                if cnn_model is None:
+                    # Only raise if user explicitly asked for it by being in this mode
+                    raise Exception("CNN Model or Tensorflow not found.")
+                arabic_text = pred_one_img(cnn_model, link)
+            else:
+                 # Fallback
+                 arabic_text = image_to_text(link)
+                
             with open('output.txt', 'w', encoding='utf-8') as file:
                 file.write(arabic_text)
-            text_to_speech(arabic_text)  # Convert Text To Speech
+            text_to_speech(arabic_text)
+        except EnvironmentError as e:
+            from tkinter import messagebox
+            messagebox.showerror("Dependency Error", f"{str(e)}\nPlease install Tesseract OCR.")
         except Exception as e:
-            print(f"Error in text_to_sound: {e}")
+            from tkinter import messagebox
+            messagebox.showerror("Error", f"An error occurred: {str(e)}")
     else:
         print("File does not exist.")
 
@@ -197,6 +246,12 @@ sound = customtkinter.CTkButton(root, image=sound_img, text=" ",command=play_aud
 sound.grid(row=3 ,column=0 ,padx=150 ,sticky="e")
 theme = Button(root, text='theme', command=theme_switch, bd=0, image=img_dark, bg="#242424")
 theme.grid(row=4 ,column=1 ,sticky='se',padx=10,pady=10)
+
+# Mode Switcher
+mode_switch = customtkinter.CTkSegmentedButton(root, values=["Full Text (Tesseract)", "Character (CNN)"])
+mode_switch.grid(row=4, column=1, sticky='sw', padx=10, pady=10)
+mode_switch.set("Full Text (Tesseract)")
+
 # Gui Main Function Call
 root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()

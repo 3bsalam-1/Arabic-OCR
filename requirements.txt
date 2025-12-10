@@ -1,0 +1,7 @@
+customtkinter
+opencv-python
+Pillow
+pygame
+pytesseract
+gTTS
+tensorflow

@@ -108,12 +108,13 @@ def open_camera():
     # Configure image in the label
     select_label.configure(image=photo_image)
 
-    # Repeat the same process after every 10 seconds
+    # Repeat the same process after every 1 seconds
     select_label.after(1, open_camera)
 
 
 # Close Camera Session Function
 def close_camera():
+    select_label.configure(text="\n\n\n\n\nSelect Input Way ", image="")
     vid.release()
     cv2.destroyAllWindows()
 
@@ -128,7 +129,6 @@ def switch_camera():
         cam = False
     else:
         close_camera()
-        select_label.configure(text="\n\n\n\n\nSelect Input Way ", image="")
         cam = True
 
 
@@ -143,19 +143,26 @@ def capture():
 def from_file():
     global link
     link = askopenfilename()  # Initiate Link With Selected File Path
-    my_img = Image.open(link)  # Open Selected Image
-    resized_img = my_img.resize((200, 200))  # Resize Image
-    new_img = ImageTk.PhotoImage(resized_img)  # Convert Image to PhotoImage To Place It In CTK Window
-    select_label.configure(image=new_img)  # Set Image As Value Of Label
-    select_label.image = new_img
-    text_to_sound(link)
+    if link:
+        my_img = Image.open(link)  # Open Selected Image
+        resized_img = my_img.resize((200, 200))  # Resize Image
+        new_img = ImageTk.PhotoImage(resized_img)  # Convert Image to PhotoImage To Place It In CTK Window
+        select_label.configure(image=new_img)  # Set Image As Value Of Label
+        select_label.image = new_img
+        text_to_sound(link)
 
 def text_to_sound(link):
     global arabic_text
-    arabic_text = image_to_text(link)  # Convert Image To Text
-    with open('output.txt', 'w', encoding='utf-8') as file:
-        file.write(arabic_text)
-    text_to_speech(arabic_text)  # Convert Text To Speech
+    if os.path.exists(link):
+        try:
+            arabic_text = image_to_text(link)  # Convert Image To Text
+            with open('output.txt', 'w', encoding='utf-8') as file:
+                file.write(arabic_text)
+            text_to_speech(arabic_text)  # Convert Text To Speech
+        except Exception as e:
+            print(f"Error in text_to_sound: {e}")
+    else:
+        print("File does not exist.")
 
 def set_text():
     data_label.configure(text=arabic_text)  # Set Text As Value Of Label

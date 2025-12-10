@@ -57,6 +57,12 @@
     - `gTTS` - Google Text-to-Speech
     - `tensorflow` - CNN model (large package ~330MB)
 
+3.  **Download the CNN Model** (Required for Character mode):
+    - The pre-trained model file `arabic-OCR.h5` (72MB) is not included in the repository
+    - Download it from: [Release Page](https://github.com/3bsalam-1/Arabic-OCR/releases) or contact the author
+    - Place it in the `model/` directory: `Code/model/arabic-OCR.h5`
+    - If you skip this step, only Tesseract mode will work
+
 ## Usage
 
 ### Running the Application
